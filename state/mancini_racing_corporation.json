@@ -32,8 +32,8 @@
         },
         {
           "text": "Send Opening Email",
-          "done": false,
-          "date": ""
+          "done": true,
+          "date": "May 7"
         },
         {
           "text": "Set and Host Zoom Meeting",
