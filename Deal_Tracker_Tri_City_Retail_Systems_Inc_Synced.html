@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deal Tracker — Tri-City Retail Systems Inc.</title>
+<style>
+  :root {
+    --navy: #0a2540;
+    --navy-2: #143a6b;
+    --blue: #2563eb;
+    --green: #16a34a;
+    --green-bg: #dcfce7;
+    --red: #dc2626;
+    --red-bg: #fee2e2;
+    --amber: #d97706;
+    --amber-bg: #fef3c7;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-500: #6b7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-900);
+    margin: 0;
+    padding: 24px 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+
+  .sync-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: white; border: 1px solid var(--gray-200);
+    border-radius: 8px; padding: 8px 12px; margin-bottom: 12px;
+    font-size: 12px;
+  }
+  .sync-status { display: flex; align-items: center; gap: 6px; color: var(--gray-700); }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray-300); }
+  .sync-dot.ok { background: var(--green); }
+  .sync-dot.saving { background: var(--amber); animation: pulse 1s infinite; }
+  .sync-dot.error { background: var(--red); }
+  .sync-dot.offline { background: var(--gray-500); }
+  @keyframes pulse { 0%,100% {opacity:1} 50% {opacity:0.4} }
+  .sync-actions { display: flex; gap: 6px; }
+  .sync-actions button {
+    background: none; border: 1px solid var(--gray-300);
+    padding: 4px 10px; border-radius: 5px; font-size: 12px;
+    cursor: pointer; color: var(--gray-700); font-family: inherit;
+  }
+  .sync-actions button:hover { background: var(--gray-100); }
+
+  .drive-row {
+    display: flex; align-items: center; gap: 8px;
+    background: white; border: 1px solid var(--gray-200);
+    border-radius: 8px; padding: 10px 12px; margin-bottom: 16px;
+  }
+  .drive-row label {
+    font-size: 11px; font-weight: 600; color: var(--gray-500);
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .drive-row input {
+    flex: 1; border: none; outline: none; font-size: 14px;
+    background: transparent; color: var(--gray-700);
+  }
+
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
+  }
+  .header-left { font-size: 14px; color: var(--gray-700); }
+  .header-left strong { color: var(--gray-900); font-size: 15px; }
+  .next-up { color: var(--red); font-weight: 600; font-size: 14px; }
+
+  .phase {
+    background: white; border-radius: 10px; margin-bottom: 14px;
+    overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .phase-header {
+    background: linear-gradient(90deg, var(--navy), var(--navy-2));
+    color: white; padding: 12px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; user-select: none;
+    font-size: 14px; font-weight: 600; letter-spacing: 0.03em;
+  }
+  .phase-header .left { display: flex; align-items: center; gap: 10px; }
+  .phase-header .caret { display: inline-block; transition: transform 0.15s; font-size: 10px; }
+  .phase.collapsed .caret { transform: rotate(-90deg); }
+  .phase.collapsed .tasks { display: none; }
+  .current-pill {
+    background: var(--red); color: white; font-size: 10px;
+    padding: 2px 8px; border-radius: 4px; font-weight: 700; letter-spacing: 0.05em;
+  }
+  .phase-count { font-size: 12px; opacity: 0.85; font-weight: 500; }
+
+  .tasks { padding: 8px; }
+  .task {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border: 1px solid var(--gray-200);
+    border-radius: 8px; margin-bottom: 6px;
+    background: white; transition: background 0.1s;
+  }
+  .task:hover { background: var(--gray-50); }
+  .task.done { background: var(--green-bg); border-color: #86efac; }
+  .task.done .task-text { color: var(--green); font-weight: 600; }
+  .task.next { background: var(--red-bg); border-color: #fca5a5; }
+  .task.next .task-text { color: var(--red); font-weight: 600; }
+  .task-num { font-size: 12px; color: var(--gray-500); width: 24px; text-align: center; flex-shrink: 0; }
+  .checkbox {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid var(--gray-300); flex-shrink: 0;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; background: white; transition: all 0.15s;
+  }
+  .task.done .checkbox { background: var(--green); border-color: var(--green); color: white; }
+  .task-text { flex: 1; font-size: 14px; line-height: 1.4; cursor: pointer; }
+  .next-pill {
+    background: var(--red); color: white; font-size: 10px;
+    padding: 2px 6px; border-radius: 4px; font-weight: 700;
+    letter-spacing: 0.05em; margin-right: 6px;
+  }
+  .task-date { font-size: 12px; color: var(--gray-500); margin-right: 6px; }
+  .task-menu { color: var(--gray-300); cursor: pointer; padding: 4px 8px; font-size: 16px; line-height: 1; user-select: none; }
+  .task-menu:hover { color: var(--gray-700); }
+
+  .menu-popup {
+    position: absolute; background: white;
+    border: 1px solid var(--gray-200); border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 4px; z-index: 100; min-width: 160px;
+  }
+  .menu-popup button {
+    display: block; width: 100%; text-align: left;
+    background: none; border: none; padding: 8px 12px;
+    font-size: 13px; cursor: pointer; border-radius: 4px; color: var(--gray-700);
+  }
+  .menu-popup button:hover { background: var(--gray-100); }
+  .menu-popup button.danger { color: var(--red); }
+
+  .actions {
+    display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap;
+  }
+  .btn {
+    background: white; border: 1px solid var(--gray-300);
+    padding: 8px 14px; border-radius: 6px; font-size: 13px;
+    cursor: pointer; color: var(--gray-700); font-family: inherit;
+  }
+  .btn:hover { background: var(--gray-100); }
+  .btn-primary { background: var(--blue); color: white; border-color: var(--blue); }
+  .btn-primary:hover { background: #1d4ed8; }
+
+  .edit-mode .task-text[contenteditable="true"] {
+    background: #fefce8; outline: 1px dashed #ca8a04;
+    padding: 2px 4px; border-radius: 3px;
+  }
+  .add-task-row { display: none; padding: 8px; gap: 6px; }
+  .edit-mode .add-task-row { display: flex; }
+  .add-task-row input {
+    flex: 1; padding: 8px; border: 1px solid var(--gray-300);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+  }
+  .delete-x { display: none; color: var(--red); cursor: pointer; font-size: 18px; padding: 0 4px; }
+  .edit-mode .delete-x { display: inline; }
+
+  /* Modal */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200; padding: 16px;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: white; border-radius: 12px; padding: 24px;
+    max-width: 480px; width: 100%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+  .modal h3 { margin: 0 0 8px; font-size: 18px; }
+  .modal p { margin: 0 0 12px; font-size: 14px; color: var(--gray-700); line-height: 1.5; }
+  .modal input {
+    width: 100%; padding: 10px; border: 1px solid var(--gray-300);
+    border-radius: 6px; font-size: 13px; font-family: monospace;
+    margin-bottom: 12px;
+  }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal a { color: var(--blue); }
+  .modal small { font-size: 12px; color: var(--gray-500); }
+
+  @media (max-width: 600px) {
+    body { padding: 12px 8px; }
+    .task-text { font-size: 13px; }
+    .phase-header { font-size: 13px; padding: 10px 12px; }
+    .sync-bar { flex-wrap: wrap; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="sync-bar">
+    <div class="sync-status">
+      <span class="sync-dot" id="syncDot"></span>
+      <span id="syncText">Connecting...</span>
+    </div>
+    <div class="sync-actions">
+      <button id="refreshBtn" title="Pull latest from GitHub">↻ Refresh</button>
+      <button id="tokenBtn">GitHub Token</button>
+    </div>
+  </div>
+
+  <div class="drive-row">
+    <label>DRIVE:</label>
+    <input id="driveLink" type="text" placeholder="Paste Google Drive folder link...">
+  </div>
+
+  <div class="header">
+    <div class="header-left">
+      <strong>Tri-City Retail Systems Inc.</strong> ·
+      <span id="completeCount">0/37</span> complete ·
+      <span id="completePercent">0%</span>
+    </div>
+    <div class="next-up" id="nextUp"></div>
+  </div>
+
+  <div id="phases"></div>
+
+  <div class="actions">
+    <button class="btn" id="editBtn">Edit Steps</button>
+    <button class="btn" id="exportBtn">Export JSON</button>
+    <button class="btn" id="importBtn">Import JSON</button>
+    <button class="btn btn-primary" id="resetBtn">Reset Progress</button>
+    <input type="file" id="importFile" accept=".json" style="display:none">
+  </div>
+
+</div>
+
+<!-- Token modal -->
+<div class="modal-bg" id="tokenModal">
+  <div class="modal">
+    <h3>GitHub Personal Access Token</h3>
+    <p>This tracker syncs state to your <strong>deal-trackers</strong> repo. Paste a token with <code>repo</code> scope so this device can read and write.</p>
+    <input type="password" id="tokenInput" placeholder="ghp_... or github_pat_...">
+    <div class="modal-actions">
+      <button class="btn" id="tokenCancel">Cancel</button>
+      <button class="btn" id="tokenClear">Clear</button>
+      <button class="btn btn-primary" id="tokenSave">Save</button>
+    </div>
+    <p style="margin-top:16px;"><small>Create one at <a href="https://github.com/settings/tokens?type=beta" target="_blank">github.com/settings/tokens</a> — fine-grained, only this repo, with <em>Contents: Read and write</em>. Token is stored only in this browser's localStorage.</small></p>
+  </div>
+</div>
+
+<script>
+const CLIENT_NAME = "Tri-City Retail Systems Inc.";
+const CLIENT_SLUG = CLIENT_NAME.replace(/\W+/g, "_").toLowerCase().replace(/^_+|_+$/g, "");
+const REPO_OWNER = "patyates20";
+const REPO_NAME = "deal-trackers";
+const STATE_PATH = `data/${CLIENT_SLUG}.json`;
+const RAW_URL = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${STATE_PATH}`;
+const API_URL = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${STATE_PATH}`;
+const TOKEN_KEY = "gh_pat_deal_trackers";
+const CACHE_KEY = "deal_tracker_cache_" + CLIENT_SLUG;
+
+const DEFAULT_DATA = {
+  driveLink: "",
+  phases: [
+    {
+      name: "PHASE 1 — START",
+      collapsed: false,
+      tasks: [
+        { text: "Add Gmail Folder", done: false, date: "" },
+        { text: "Start Claude Project", done: false, date: "" },
+        { text: "Run Claude Research Script on the Company", done: false, date: "" },
+        { text: "Create Opening Email", done: false, date: "" },
+        { text: "Create Intro Video (Loom — gauges watches)", done: false, date: "" },
+        { text: "Send Opening Email", done: false, date: "" },
+        { text: "Set and Host Zoom Meeting", done: false, date: "" },
+        { text: "Upload Transcript to Claude", done: false, date: "" },
+        { text: "Create and Send Initial Financials Steps and Process Overview Email", done: false, date: "" }
+      ]
+    },
+    {
+      name: "PHASE 2 — FINANCIAL REVIEW",
+      collapsed: false,
+      tasks: [
+        { text: "Received P&L from Seller", done: false, date: "" },
+        { text: "Send P&L to QL PL Import", done: false, date: "" },
+        { text: "Request Cashback Information from Seller", done: false, date: "" },
+        { text: "Create Addbacks and Finalize SDE", done: false, date: "" },
+        { text: "Create Loom Video of Financial Findings / Valuation", done: false, date: "" },
+        { text: "Set Meeting with Seller to Review Financials and Valuation", done: false, date: "" },
+        { text: "Request 3 Years Taxes for Corporation (Google Drive Link)", done: false, date: "" },
+        { text: "Send Taxes to SBA Bankers", done: false, date: "" },
+        { text: "Review Results from SBA Bankers", done: false, date: "" }
+      ]
+    },
+    {
+      name: "PHASE 3 — ENGAGEMENT & CLIENT INTERVIEW",
+      collapsed: false,
+      tasks: [
+        { text: "Send Engagement Agreement", done: false, date: "" },
+        { text: "Engagement Agreement Signed", done: false, date: "" },
+        { text: "Run Client Interview Script with Overview via Claude", done: false, date: "" },
+        { text: "Send Client Interview in Google Docs to the Seller", done: false, date: "" },
+        { text: "Send Completed Client Interview to the QL Editors", done: false, date: "" },
+        { text: "Finalize Edits", done: false, date: "" }
+      ]
+    },
+    {
+      name: "PHASE 4 — LISTING BUILD",
+      collapsed: false,
+      tasks: [
+        { text: "Create Executive Summary and Key Benefits", done: false, date: "" },
+        { text: "Send Executive Summary and Key Benefits to Editors", done: false, date: "" },
+        { text: "Create Summary in Generator", done: false, date: "" },
+        { text: "Determine Outreach for Deanna", done: false, date: "" },
+        { text: "Set Video Interview and Final Review of Listing", done: false, date: "" },
+        { text: "Send Client Interview to QL Summaries", done: false, date: "" },
+        { text: "Complete Video Interview", done: false, date: "" },
+        { text: "Populate Anonymized Version of Summary to AC", done: false, date: "" },
+        { text: "Check Revenue, SDE, Price and All AC Info", done: false, date: "" },
+        { text: "Populate Docs in Business Summary Folder", done: false, date: "" }
+      ]
+    },
+    {
+      name: "PHASE 5 — LAUNCH",
+      collapsed: false,
+      tasks: [
+        { text: "Set Email Launch", done: false, date: "" },
+        { text: "Push Live", done: false, date: "" },
+        { text: "Review Website Listing", done: false, date: "" }
+      ]
+    }
+  ]
+};
+
+let data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+let editMode = false;
+let openMenu = null;
+let token = localStorage.getItem(TOKEN_KEY) || "";
+let fileSha = null;
+let saveTimer = null;
+let isSaving = false;
+
+function setStatus(text, kind) {
+  document.getElementById("syncText").textContent = text;
+  const dot = document.getElementById("syncDot");
+  dot.className = "sync-dot " + (kind || "");
+}
+
+async function ghGet() {
+  // Prefer authenticated read so we get the SHA. Fall back to raw if no token.
+  if (token) {
+    const res = await fetch(API_URL, {
+      headers: { Authorization: `token ${token}`, Accept: "application/vnd.github+json" },
+      cache: "no-store"
+    });
+    if (res.status === 404) return { notFound: true };
+    if (res.status === 401) { setStatus("Bad token", "error"); return { error: "auth" }; }
+    if (!res.ok) { setStatus(`Read failed (${res.status})`, "error"); return { error: res.status }; }
+    const j = await res.json();
+    fileSha = j.sha;
+    // GitHub returns base64 with newlines
+    const raw = atob(j.content.replace(/\s/g, ""));
+    return { content: JSON.parse(decodeURIComponent(escape(raw))) };
+  } else {
+    const res = await fetch(RAW_URL + "?cb=" + Date.now(), { cache: "no-store" });
+    if (res.status === 404) return { notFound: true };
+    if (!res.ok) { setStatus("Offline / no token", "offline"); return { error: res.status }; }
+    return { content: await res.json() };
+  }
+}
+
+async function ghPut() {
+  if (!token) { setStatus("Token needed to save", "error"); return false; }
+  isSaving = true;
+  setStatus("Saving...", "saving");
+  // Make sure we have latest SHA
+  if (!fileSha) {
+    const head = await ghGet();
+    if (head.error === "auth") { isSaving = false; return false; }
+  }
+  const body = {
+    message: `Update ${CLIENT_NAME} tracker`,
+    content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2)))),
+    branch: "main"
+  };
+  if (fileSha) body.sha = fileSha;
+  try {
+    const res = await fetch(API_URL, {
+      method: "PUT",
+      headers: {
+        Authorization: `token ${token}`,
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+    if (res.status === 409 || res.status === 422) {
+      // Conflict — refetch and merge by reload
+      setStatus("Conflict — pulling latest", "error");
+      fileSha = null;
+      const fresh = await ghGet();
+      if (fresh.content) { data = fresh.content; render(); }
+      isSaving = false;
+      // Try once more after a beat
+      setTimeout(() => ghPut(), 500);
+      return false;
+    }
+    if (!res.ok) {
+      setStatus(`Save failed (${res.status})`, "error");
+      isSaving = false;
+      return false;
+    }
+    const j = await res.json();
+    fileSha = j.content.sha;
+    setStatus("Synced", "ok");
+    isSaving = false;
+    return true;
+  } catch (e) {
+    setStatus("Network error", "error");
+    isSaving = false;
+    return false;
+  }
+}
+
+function debouncedSave() {
+  // Always cache locally too, so offline edits aren't lost
+  localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { ghPut(); }, 1200);
+}
+
+async function initialLoad() {
+  setStatus("Loading...", "saving");
+  const res = await ghGet();
+  if (res.notFound) {
+    // First run for this client — push the default
+    setStatus("Initializing...", "saving");
+    if (token) {
+      data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+      const ok = await ghPut();
+      if (ok) render();
+    } else {
+      // No token, load cache or default
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) { try { data = JSON.parse(cached); } catch(e) {} }
+      setStatus("No token — read-only", "offline");
+      render();
+    }
+    return;
+  }
+  if (res.content) {
+    data = res.content;
+    setStatus(token ? "Synced" : "Read-only (no token)", token ? "ok" : "offline");
+    render();
+    return;
+  }
+  // Error path — fall back to local cache
+  const cached = localStorage.getItem(CACHE_KEY);
+  if (cached) { try { data = JSON.parse(cached); } catch(e) {} }
+  render();
+}
+
+// === Rendering / interaction (unchanged from base template) ===
+
+function totalTasks() { return data.phases.reduce((s, p) => s + p.tasks.length, 0); }
+function doneTasks() { return data.phases.reduce((s, p) => s + p.tasks.filter(t => t.done).length, 0); }
+
+function findNextTask() {
+  for (let pi = 0; pi < data.phases.length; pi++) {
+    const p = data.phases[pi];
+    for (let ti = 0; ti < p.tasks.length; ti++) {
+      if (!p.tasks[ti].done) return { pi, ti, task: p.tasks[ti], phase: p };
+    }
+  }
+  return null;
+}
+function findCurrentPhase() { const n = findNextTask(); return n ? n.pi : -1; }
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function render() {
+  const total = totalTasks();
+  const done = doneTasks();
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById("completeCount").textContent = `${done}/${total}`;
+  document.getElementById("completePercent").textContent = `${pct}%`;
+
+  const next = findNextTask();
+  const nextUp = document.getElementById("nextUp");
+  if (next) {
+    nextUp.textContent = `▶ NEXT: ${next.task.text}`;
+    nextUp.style.color = "";
+  } else {
+    nextUp.textContent = "✓ All steps complete";
+    nextUp.style.color = "var(--green)";
+  }
+
+  document.getElementById("driveLink").value = data.driveLink || "";
+  const currentPhase = findCurrentPhase();
+  const container = document.getElementById("phases");
+  container.innerHTML = "";
+
+  let globalNum = 0;
+  data.phases.forEach((phase, pi) => {
+    const phaseDone = phase.tasks.filter(t => t.done).length;
+    const phaseDiv = document.createElement("div");
+    phaseDiv.className = "phase" + (phase.collapsed ? " collapsed" : "");
+
+    const header = document.createElement("div");
+    header.className = "phase-header";
+    header.innerHTML = `
+      <div class="left">
+        <span class="caret">▼</span>
+        <span>${escapeHtml(phase.name)}</span>
+        ${pi === currentPhase ? '<span class="current-pill">CURRENT</span>' : ''}
+      </div>
+      <span class="phase-count">${phaseDone}/${phase.tasks.length}</span>
+    `;
+    header.addEventListener("click", () => {
+      phase.collapsed = !phase.collapsed;
+      debouncedSave(); render();
+    });
+    phaseDiv.appendChild(header);
+
+    const tasksDiv = document.createElement("div");
+    tasksDiv.className = "tasks";
+
+    phase.tasks.forEach((task, ti) => {
+      globalNum++;
+      const isNext = next && next.pi === pi && next.ti === ti;
+      const taskDiv = document.createElement("div");
+      taskDiv.className = "task" + (task.done ? " done" : "") + (isNext ? " next" : "");
+      taskDiv.innerHTML = `
+        <span class="task-num">${globalNum}</span>
+        <div class="checkbox">${task.done ? "✓" : ""}</div>
+        <span class="task-text" data-pi="${pi}" data-ti="${ti}">
+          ${isNext ? '<span class="next-pill">NEXT</span>' : ''}${escapeHtml(task.text)}
+        </span>
+        ${task.date ? `<span class="task-date">${escapeHtml(task.date)}</span>` : ''}
+        <span class="delete-x" data-pi="${pi}" data-ti="${ti}">×</span>
+        <span class="task-menu" data-pi="${pi}" data-ti="${ti}">⋯</span>
+      `;
+      tasksDiv.appendChild(taskDiv);
+    });
+
+    const addRow = document.createElement("div");
+    addRow.className = "add-task-row";
+    addRow.innerHTML = `
+      <input type="text" placeholder="New step..." data-pi="${pi}">
+      <button class="btn" data-pi="${pi}">Add</button>
+    `;
+    tasksDiv.appendChild(addRow);
+
+    phaseDiv.appendChild(tasksDiv);
+    container.appendChild(phaseDiv);
+  });
+
+  attachHandlers();
+}
+
+function attachHandlers() {
+  document.querySelectorAll(".checkbox").forEach(el => {
+    el.addEventListener("click", e => {
+      e.stopPropagation();
+      const t = e.target.closest(".task").querySelector(".task-text");
+      const pi = +t.dataset.pi, ti = +t.dataset.ti;
+      data.phases[pi].tasks[ti].done = !data.phases[pi].tasks[ti].done;
+      if (data.phases[pi].tasks[ti].done && !data.phases[pi].tasks[ti].date) {
+        data.phases[pi].tasks[ti].date = new Date().toLocaleDateString("en-US", {month:"short", day:"numeric"});
+      }
+      debouncedSave(); render();
+    });
+  });
+
+  document.querySelectorAll(".task-text").forEach(el => {
+    el.addEventListener("click", e => {
+      if (editMode) return;
+      const pi = +el.dataset.pi, ti = +el.dataset.ti;
+      data.phases[pi].tasks[ti].done = !data.phases[pi].tasks[ti].done;
+      if (data.phases[pi].tasks[ti].done && !data.phases[pi].tasks[ti].date) {
+        data.phases[pi].tasks[ti].date = new Date().toLocaleDateString("en-US", {month:"short", day:"numeric"});
+      }
+      debouncedSave(); render();
+    });
+    if (editMode) {
+      el.setAttribute("contenteditable", "true");
+      el.addEventListener("blur", () => {
+        const pi = +el.dataset.pi, ti = +el.dataset.ti;
+        const newText = el.textContent.replace(/^NEXT/, "").trim();
+        if (newText) {
+          data.phases[pi].tasks[ti].text = newText;
+          debouncedSave();
+        }
+      });
+    }
+  });
+
+  document.querySelectorAll(".delete-x").forEach(el => {
+    el.addEventListener("click", e => {
+      e.stopPropagation();
+      const pi = +el.dataset.pi, ti = +el.dataset.ti;
+      if (confirm(`Delete: "${data.phases[pi].tasks[ti].text}"?`)) {
+        data.phases[pi].tasks.splice(ti, 1);
+        debouncedSave(); render();
+      }
+    });
+  });
+
+  document.querySelectorAll(".task-menu").forEach(el => {
+    el.addEventListener("click", e => {
+      e.stopPropagation();
+      closeMenu();
+      const pi = +el.dataset.pi, ti = +el.dataset.ti;
+      const task = data.phases[pi].tasks[ti];
+      const rect = el.getBoundingClientRect();
+      const menu = document.createElement("div");
+      menu.className = "menu-popup";
+      menu.style.top = (rect.bottom + window.scrollY + 4) + "px";
+      menu.style.left = (rect.left + window.scrollX - 130) + "px";
+      menu.innerHTML = `
+        <button data-action="toggle">${task.done ? "Mark not done" : "Mark done"}</button>
+        <button data-action="setdate">Set date...</button>
+        <button data-action="cleardate">Clear date</button>
+        <button class="danger" data-action="delete">Delete step</button>
+      `;
+      menu.querySelectorAll("button").forEach(b => {
+        b.addEventListener("click", () => {
+          const a = b.dataset.action;
+          if (a === "toggle") {
+            task.done = !task.done;
+            if (task.done && !task.date) task.date = new Date().toLocaleDateString("en-US", {month:"short", day:"numeric"});
+          } else if (a === "setdate") {
+            const d = prompt("Date (e.g., May 5):", task.date || "");
+            if (d !== null) task.date = d;
+          } else if (a === "cleardate") {
+            task.date = "";
+          } else if (a === "delete") {
+            if (confirm(`Delete: "${task.text}"?`)) {
+              data.phases[pi].tasks.splice(ti, 1);
+            } else return;
+          }
+          debouncedSave(); closeMenu(); render();
+        });
+      });
+      document.body.appendChild(menu);
+      openMenu = menu;
+    });
+  });
+
+  document.querySelectorAll(".add-task-row button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const pi = +btn.dataset.pi;
+      const input = document.querySelector(`.add-task-row input[data-pi="${pi}"]`);
+      const text = input.value.trim();
+      if (text) {
+        data.phases[pi].tasks.push({ text, done: false, date: "" });
+        debouncedSave(); render();
+      }
+    });
+  });
+}
+
+function closeMenu() { if (openMenu) { openMenu.remove(); openMenu = null; } }
+document.addEventListener("click", closeMenu);
+
+document.getElementById("driveLink").addEventListener("input", e => {
+  data.driveLink = e.target.value;
+  debouncedSave();
+});
+
+document.getElementById("editBtn").addEventListener("click", () => {
+  editMode = !editMode;
+  document.body.classList.toggle("edit-mode", editMode);
+  document.getElementById("editBtn").textContent = editMode ? "Done Editing" : "Edit Steps";
+  render();
+});
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${CLIENT_SLUG}_tracker.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("importBtn").addEventListener("click", () => document.getElementById("importFile").click());
+document.getElementById("importFile").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try { data = JSON.parse(r.result); debouncedSave(); render(); }
+    catch (e) { alert("Invalid JSON"); }
+  };
+  r.readAsText(f);
+});
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset all progress? This wipes checkmarks and dates but keeps your custom steps. Will sync to GitHub.")) {
+    data.phases.forEach(p => p.tasks.forEach(t => { t.done = false; t.date = ""; }));
+    debouncedSave(); render();
+  }
+});
+
+// Refresh button — pull latest from GitHub
+document.getElementById("refreshBtn").addEventListener("click", async () => {
+  setStatus("Refreshing...", "saving");
+  fileSha = null;
+  const res = await ghGet();
+  if (res.content) {
+    data = res.content;
+    setStatus("Synced", "ok");
+    render();
+  } else if (res.notFound) {
+    setStatus("No remote state", "offline");
+  }
+});
+
+// Token modal
+const tokenModal = document.getElementById("tokenModal");
+document.getElementById("tokenBtn").addEventListener("click", () => {
+  document.getElementById("tokenInput").value = token;
+  tokenModal.classList.add("show");
+});
+document.getElementById("tokenCancel").addEventListener("click", () => tokenModal.classList.remove("show"));
+document.getElementById("tokenClear").addEventListener("click", () => {
+  localStorage.removeItem(TOKEN_KEY);
+  token = "";
+  tokenModal.classList.remove("show");
+  setStatus("No token — read-only", "offline");
+});
+document.getElementById("tokenSave").addEventListener("click", async () => {
+  const v = document.getElementById("tokenInput").value.trim();
+  if (!v) return;
+  localStorage.setItem(TOKEN_KEY, v);
+  token = v;
+  tokenModal.classList.remove("show");
+  fileSha = null;
+  await initialLoad();
+});
+
+// Pull on focus — picks up changes from other devices
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState === "visible" && !isSaving) {
+    fileSha = null;
+    const res = await ghGet();
+    if (res.content) {
+      const remote = JSON.stringify(res.content);
+      const local = JSON.stringify(data);
+      if (remote !== local) {
+        data = res.content;
+        setStatus("Updated from remote", "ok");
+        render();
+      } else {
+        setStatus("Synced", "ok");
+      }
+    }
+  }
+});
+
+// Boot
+if (!token) {
+  // First-time: show modal but also try to load read-only
+  setStatus("No token — read-only", "offline");
+  render();
+  tokenModal.classList.add("show");
+} else {
+  initialLoad();
+}
+</script>
+</body>
+</html>
