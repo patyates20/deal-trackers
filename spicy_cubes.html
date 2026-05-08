@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deal Tracker — Spicy Cubes</title>
+<style>
+  :root {
+    --navy: #0a2540; --navy-2: #143a6b;
+    --blue: #2563eb;
+    --green: #16a34a; --green-bg: #dcfce7;
+    --red: #dc2626; --red-bg: #fee2e2;
+    --amber: #ca8a04;
+    --gray-50: #f9fafb; --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb; --gray-300: #d1d5db;
+    --gray-500: #6b7280; --gray-700: #374151;
+    --gray-900: #111827;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--gray-50); color: var(--gray-900);
+    margin: 0; padding: 24px 16px; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+
+  .sync-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+    padding: 4px 10px; border-radius: 999px;
+    margin-bottom: 12px; text-transform: uppercase;
+  }
+  .sync-badge.idle { background: var(--gray-100); color: var(--gray-700); }
+  .sync-badge.syncing { background: #dbeafe; color: var(--blue); }
+  .sync-badge.synced { background: var(--green-bg); color: var(--green); }
+  .sync-badge.error { background: var(--red-bg); color: var(--red); }
+  .sync-badge .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor;
+  }
+  .sync-badge.syncing .dot { animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: 0.3; } }
+
+  .drive-row {
+    display: flex; align-items: center; gap: 8px;
+    background: white; border: 1px solid var(--gray-200);
+    border-radius: 8px; padding: 10px 12px; margin-bottom: 16px;
+  }
+  .drive-row label {
+    font-size: 11px; font-weight: 600; color: var(--gray-500);
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .drive-row input {
+    flex: 1; border: none; outline: none; font-size: 14px;
+    background: transparent; color: var(--gray-700);
+  }
+
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
+  }
+  .header-left { font-size: 14px; color: var(--gray-700); }
+  .header-left strong { color: var(--gray-900); font-size: 15px; }
+  .next-up { color: var(--red); font-weight: 600; font-size: 14px; }
+
+  .phase {
+    background: white; border-radius: 10px; margin-bottom: 14px;
+    overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .phase-header {
+    background: linear-gradient(90deg, var(--navy), var(--navy-2));
+    color: white; padding: 12px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; user-select: none;
+    font-size: 14px; font-weight: 600; letter-spacing: 0.03em;
+  }
+  .phase-header .left { display: flex; align-items: center; gap: 10px; }
+  .phase-header .caret {
+    display: inline-block; transition: transform 0.15s; font-size: 10px;
+  }
+  .phase.collapsed .caret { transform: rotate(-90deg); }
+  .phase.collapsed .tasks { display: none; }
+  .current-pill {
+    background: var(--red); color: white; font-size: 10px;
+    padding: 2px 8px; border-radius: 4px; font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .phase-count { font-size: 12px; opacity: 0.85; font-weight: 500; }
+
+  .tasks { padding: 8px; }
+  .task {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border: 1px solid var(--gray-200);
+    border-radius: 8px; margin-bottom: 6px;
+    background: white; transition: background 0.1s;
+  }
+  .task:hover { background: var(--gray-50); }
+  .task.done { background: var(--green-bg); border-color: #86efac; }
+  .task.done .task-text { color: var(--green); font-weight: 600; }
+  .task.next { background: var(--red-bg); border-color: #fca5a5; }
+  .task.next .task-text { color: var(--red); font-weight: 600; }
+  .task-num {
+    font-size: 12px; color: var(--gray-500); width: 24px;
+    text-align: center; flex-shrink: 0;
+  }
+  .checkbox {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid var(--gray-300); flex-shrink: 0;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; background: white;
+    transition: all 0.15s;
+  }
+  .task.done .checkbox { background: var(--green); border-color: var(--green); color: white; }
+  .task-text { flex: 1; font-size: 14px; line-height: 1.4; cursor: pointer; }
+  .next-pill {
+    background: var(--red); color: white; font-size: 10px;
+    padding: 2px 6px; border-radius: 4px; font-weight: 700;
+    letter-spacing: 0.05em; margin-right: 6px;
+  }
+  .task-date { font-size: 12px; color: var(--gray-500); margin-right: 6px; }
+  .task-menu {
+    color: var(--gray-300); cursor: pointer; padding: 4px 8px;
+    font-size: 16px; line-height: 1; user-select: none;
+  }
+  .task-menu:hover { color: var(--gray-700); }
+
+  .menu-popup {
+    position: absolute; background: white;
+    border: 1px solid var(--gray-200); border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 4px; z-index: 100; min-width: 160px;
+  }
+  .menu-popup button {
+    display: block; width: 100%; text-align: left;
+    background: none; border: none; padding: 8px 12px;
+    font-size: 13px; cursor: pointer; border-radius: 4px;
+    color: var(--gray-700); font-family: inherit;
+  }
+  .menu-popup button:hover { background: var(--gray-100); }
+  .menu-popup button.danger { color: var(--red); }
+
+  .actions {
+    display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap;
+  }
+  .btn {
+    background: white; border: 1px solid var(--gray-300);
+    padding: 8px 14px; border-radius: 6px; font-size: 13px;
+    cursor: pointer; color: var(--gray-700); font-family: inherit;
+  }
+  .btn:hover { background: var(--gray-100); }
+  .btn-primary { background: var(--blue); color: white; border-color: var(--blue); }
+  .btn-primary:hover { background: #1d4ed8; }
+
+  .edit-mode .task-text[contenteditable="true"] {
+    background: #fefce8; outline: 1px dashed var(--amber);
+    padding: 2px 4px; border-radius: 3px;
+  }
+  .add-task-row { display: none; padding: 8px; gap: 6px; }
+  .edit-mode .add-task-row { display: flex; }
+  .add-task-row input {
+    flex: 1; padding: 8px; border: 1px solid var(--gray-300);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+  }
+  .delete-x {
+    display: none; color: var(--red); cursor: pointer;
+    font-size: 18px; padding: 0 4px;
+  }
+  .edit-mode .delete-x { display: inline; }
+
+  .token-prompt {
+    background: #fefce8; border: 1px solid var(--amber);
+    border-radius: 8px; padding: 14px; margin-bottom: 16px;
+    font-size: 13px; color: var(--gray-700);
+  }
+  .token-prompt strong { color: var(--gray-900); }
+  .token-prompt input {
+    width: 100%; padding: 8px; margin-top: 8px;
+    border: 1px solid var(--gray-300); border-radius: 6px;
+    font-family: monospace; font-size: 12px;
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 12px 8px; }
+    .task-text { font-size: 13px; }
+    .phase-header { font-size: 13px; padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="syncBadge" class="sync-badge idle">
+    <span class="dot"></span><span id="syncText">Loading...</span>
+  </div>
+
+  <div id="tokenPrompt" class="token-prompt" style="display:none">
+    <strong>One-time setup:</strong> Paste your GitHub token below. It saves to this browser only and is used to sync changes to your repo.
+    <input id="tokenInput" type="password" placeholder="github_pat_...">
+    <button class="btn btn-primary" id="tokenSave" style="margin-top:8px">Save Token</button>
+  </div>
+
+  <div class="drive-row">
+    <label>DRIVE:</label>
+    <input id="driveLink" type="text" placeholder="Paste Google Drive folder link...">
+  </div>
+
+  <div class="header">
+    <div class="header-left">
+      <strong>Spicy Cubes</strong> ·
+      <span id="completeCount">0/37</span> complete ·
+      <span id="completePercent">0%</span>
+    </div>
+    <div class="next-up" id="nextUp"></div>
+  </div>
+
+  <div id="phases"></div>
+
+  <div class="actions">
+    <button class="btn" id="editBtn">Edit Steps</button>
+    <button class="btn" id="resetBtn">Reset Progress</button>
+    <button class="btn" id="changeTokenBtn">Change Token</button>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// CONFIG — these are filled in by the skill when generating
+// ============================================================
+const CLIENT_NAME = "Spicy Cubes";
+const CLIENT_SLUG = "Spicy Cubes";
+const GITHUB_USER = "patyates20";
+const GITHUB_REPO = "deal-trackers";
+const STATE_PATH  = `state/${CLIENT_SLUG}.json`;
+
+const DEFAULT_DATA = {
+  driveLink: "",
+  phases: [
+    { name: "PHASE 1 — START", collapsed: false, tasks: [
+      { text: "Add Gmail Folder", done: false, date: "" },
+      { text: "Start Claude Project", done: false, date: "" },
+      { text: "Run Claude Research Script on the Company", done: false, date: "" },
+      { text: "Create Opening Email", done: false, date: "" },
+      { text: "Create Intro Video (Loom — gauges watches)", done: false, date: "" },
+      { text: "Send Opening Email", done: false, date: "" },
+      { text: "Set and Host Zoom Meeting", done: false, date: "" },
+      { text: "Upload Transcript to Claude", done: false, date: "" },
+      { text: "Create and Send Initial Financials Steps and Process Overview Email", done: false, date: "" }
+    ]},
+    { name: "PHASE 2 — FINANCIAL REVIEW", collapsed: false, tasks: [
+      { text: "Received P&L from Seller", done: false, date: "" },
+      { text: "Send P&L to QL PL Import", done: false, date: "" },
+      { text: "Request Cashback Information from Seller", done: false, date: "" },
+      { text: "Create Addbacks and Finalize SDE", done: false, date: "" },
+      { text: "Create Loom Video of Financial Findings / Valuation", done: false, date: "" },
+      { text: "Set Meeting with Seller to Review Financials and Valuation", done: false, date: "" },
+      { text: "Request 3 Years Taxes for Corporation (Google Drive Link)", done: false, date: "" },
+      { text: "Send Taxes to SBA Bankers", done: false, date: "" },
+      { text: "Review Results from SBA Bankers", done: false, date: "" }
+    ]},
+    { name: "PHASE 3 — ENGAGEMENT & CLIENT INTERVIEW", collapsed: false, tasks: [
+      { text: "Send Engagement Agreement", done: false, date: "" },
+      { text: "Engagement Agreement Signed", done: false, date: "" },
+      { text: "Run Client Interview Script with Overview via Claude", done: false, date: "" },
+      { text: "Send Client Interview in Google Docs to the Seller", done: false, date: "" },
+      { text: "Send Completed Client Interview to the QL Editors", done: false, date: "" },
+      { text: "Finalize Edits", done: false, date: "" }
+    ]},
+    { name: "PHASE 4 — LISTING BUILD", collapsed: false, tasks: [
+      { text: "Create Executive Summary and Key Benefits", done: false, date: "" },
+      { text: "Send Executive Summary and Key Benefits to Editors", done: false, date: "" },
+      { text: "Create Summary in Generator", done: false, date: "" },
+      { text: "Determine Outreach for Deanna", done: false, date: "" },
+      { text: "Set Video Interview and Final Review of Listing", done: false, date: "" },
+      { text: "Send Client Interview to QL Summaries", done: false, date: "" },
+      { text: "Complete Video Interview", done: false, date: "" },
+      { text: "Populate Anonymized Version of Summary to AC", done: false, date: "" },
+      { text: "Check Revenue, SDE, Price and All AC Info", done: false, date: "" },
+      { text: "Populate Docs in Business Summary Folder", done: false, date: "" }
+    ]},
+    { name: "PHASE 5 — LAUNCH", collapsed: false, tasks: [
+      { text: "Set Email Launch", done: false, date: "" },
+      { text: "Push Live", done: false, date: "" },
+      { text: "Review Website Listing", done: false, date: "" }
+    ]}
+  ]
+};
+
+// ============================================================
+// State + GitHub sync
+// ============================================================
+let data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+let fileSha = null;             // GitHub blob SHA — needed to update
+let editMode = false;
+let openMenu = null;
+let saveTimer = null;
+let saving = false;
+let pendingChanges = false;
+
+const TOKEN_KEY = "deal_tracker_gh_token";
+
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY) || "";
+}
+function setToken(t) {
+  localStorage.setItem(TOKEN_KEY, t);
+}
+
+function setSync(state, msg) {
+  const badge = document.getElementById("syncBadge");
+  const text = document.getElementById("syncText");
+  badge.className = "sync-badge " + state;
+  text.textContent = msg;
+}
+
+async function ghGet() {
+  const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${STATE_PATH}`;
+  const r = await fetch(url, {
+    headers: {
+      "Authorization": `Bearer ${getToken()}`,
+      "Accept": "application/vnd.github+json"
+    }
+  });
+  if (r.status === 404) return null;            // doesn't exist yet
+  if (!r.ok) throw new Error(`GET failed: ${r.status} ${await r.text()}`);
+  const json = await r.json();
+  fileSha = json.sha;
+  // content is base64
+  const content = atob(json.content.replace(/\n/g, ""));
+  // decode UTF-8 properly
+  const bytes = new Uint8Array(content.length);
+  for (let i = 0; i < content.length; i++) bytes[i] = content.charCodeAt(i);
+  const text = new TextDecoder("utf-8").decode(bytes);
+  return JSON.parse(text);
+}
+
+async function ghPut(payload, message) {
+  const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${STATE_PATH}`;
+  // encode UTF-8 -> base64
+  const body = JSON.stringify(payload, null, 2);
+  const utf8 = new TextEncoder().encode(body);
+  let bin = "";
+  for (let i = 0; i < utf8.length; i++) bin += String.fromCharCode(utf8[i]);
+  const b64 = btoa(bin);
+
+  const reqBody = {
+    message: message || `Update ${CLIENT_SLUG}`,
+    content: b64,
+    branch: "main"
+  };
+  if (fileSha) reqBody.sha = fileSha;
+
+  const r = await fetch(url, {
+    method: "PUT",
+    headers: {
+      "Authorization": `Bearer ${getToken()}`,
+      "Accept": "application/vnd.github+json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(reqBody)
+  });
+  if (!r.ok) throw new Error(`PUT failed: ${r.status} ${await r.text()}`);
+  const json = await r.json();
+  fileSha = json.content.sha;
+}
+
+async function loadState() {
+  if (!getToken()) {
+    document.getElementById("tokenPrompt").style.display = "block";
+    setSync("error", "Token needed");
+    return;
+  }
+  setSync("syncing", "Loading...");
+  try {
+    const remote = await ghGet();
+    if (remote) {
+      data = remote;
+    } else {
+      // first time — create the file
+      await ghPut(data, `Initialize ${CLIENT_SLUG}`);
+    }
+    setSync("synced", "Synced");
+    render();
+  } catch (e) {
+    console.error(e);
+    setSync("error", "Load failed — check token");
+  }
+}
+
+function scheduleSave() {
+  pendingChanges = true;
+  setSync("syncing", "Saving...");
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(doSave, 600);
+}
+
+async function doSave() {
+  if (saving) { saveTimer = setTimeout(doSave, 600); return; }
+  saving = true;
+  pendingChanges = false;
+  try {
+    await ghPut(data);
+    if (pendingChanges) {
+      // something changed while we were saving — go again
+      saving = false;
+      scheduleSave();
+      return;
+    }
+    setSync("synced", "Synced");
+  } catch (e) {
+    console.error(e);
+    // could be a SHA conflict — re-fetch and retry once
+    if (String(e).includes("409") || String(e).includes("422")) {
+      try {
+        const remote = await ghGet();
+        if (remote) data = mergeRemote(data, remote);
+        await ghPut(data);
+        setSync("synced", "Synced (merged)");
+        render();
+      } catch (e2) {
+        setSync("error", "Save failed");
+      }
+    } else {
+      setSync("error", "Save failed");
+    }
+  } finally {
+    saving = false;
+  }
+}
+
+// Simple merge: prefer "done" wins. If either side has it done, it's done.
+// Use latest date. Keep custom step edits from the side with more steps.
+function mergeRemote(local, remote) {
+  const merged = JSON.parse(JSON.stringify(local));
+  merged.driveLink = local.driveLink || remote.driveLink;
+  for (let pi = 0; pi < merged.phases.length; pi++) {
+    const rp = remote.phases[pi];
+    if (!rp) continue;
+    for (let ti = 0; ti < merged.phases[pi].tasks.length; ti++) {
+      const rt = rp.tasks[ti];
+      if (!rt) continue;
+      const lt = merged.phases[pi].tasks[ti];
+      if (rt.done && !lt.done) { lt.done = true; lt.date = rt.date || lt.date; }
+    }
+  }
+  return merged;
+}
+
+// ============================================================
+// UI
+// ============================================================
+function totalTasks() { return data.phases.reduce((s, p) => s + p.tasks.length, 0); }
+function doneTasks() { return data.phases.reduce((s, p) => s + p.tasks.filter(t => t.done).length, 0); }
+
+function findNextTask() {
+  for (let pi = 0; pi < data.phases.length; pi++) {
+    const p = data.phases[pi];
+    for (let ti = 0; ti < p.tasks.length; ti++) {
+      if (!p.tasks[ti].done) return { pi, ti, task: p.tasks[ti], phase: p };
+    }
+  }
+  return null;
+}
+function findCurrentPhase() { const n = findNextTask(); return n ? n.pi : -1; }
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function render() {
+  const total = totalTasks();
+  const done = doneTasks();
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById("completeCount").textContent = `${done}/${total}`;
+  document.getElementById("completePercent").textContent = `${pct}%`;
+
+  const next = findNextTask();
+  const nextUp = document.getElementById("nextUp");
+  if (next) {
+    nextUp.textContent = `▶ NEXT: ${next.task.text}`;
+    nextUp.style.color = "var(--red)";
+  } else {
+    nextUp.textContent = "✓ All steps complete";
+    nextUp.style.color = "var(--green)";
+  }
+
+  document.getElementById("driveLink").value = data.driveLink || "";
+
+  const currentPhase = findCurrentPhase();
+  const container = document.getElementById("phases");
+  container.innerHTML = "";
+
+  let globalNum = 0;
+  data.phases.forEach((phase, pi) => {
+    const phaseDone = phase.tasks.filter(t => t.done).length;
+    const phaseDiv = document.createElement("div");
+    phaseDiv.className = "phase" + (phase.collapsed ? " collapsed" : "");
+
+    const header = document.createElement("div");
+    header.className = "phase-header";
+    header.innerHTML = `
+      <div class="left">
+        <span class="caret">▼</span>
+        <span>${escapeHtml(phase.name)}</span>
+        ${pi === currentPhase ? '<span class="current-pill">CURRENT</span>' : ''}
+      </div>
+      <span class="phase-count">${phaseDone}/${phase.tasks.length}</span>
+    `;
+    header.addEventListener("click", () => {
+      phase.collapsed = !phase.collapsed;
+      scheduleSave(); render();
+    });
+    phaseDiv.appendChild(header);
+
+    const tasksDiv = document.createElement("div");
+    tasksDiv.className = "tasks";
+
+    phase.tasks.forEach((task, ti) => {
+      globalNum++;
+      const isNext = next && next.pi === pi && next.ti === ti;
+      const taskDiv = document.createElement("div");
+      taskDiv.className = "task" + (task.done ? " done" : "") + (isNext ? " next" : "");
+      taskDiv.innerHTML = `
+        <span class="task-num">${globalNum}</span>
+        <div class="checkbox">${task.done ? "✓" : ""}</div>
+        <span class="task-text" data-pi="${pi}" data-ti="${ti}">
+          ${isNext ? '<span class="next-pill">NEXT</span>' : ''}${escapeHtml(task.text)}
+        </span>
+        ${task.date ? `<span class="task-date">${escapeHtml(task.date)}</span>` : ''}
+        <span class="delete-x" data-pi="${pi}" data-ti="${ti}">×</span>
+        <span class="task-menu" data-pi="${pi}" data-ti="${ti}">⋯</span>
+      `;
+      tasksDiv.appendChild(taskDiv);
+    });
+
+    const addRow = document.createElement("div");
+    addRow.className = "add-task-row";
+    addRow.innerHTML = `
+      <input type="text" placeholder="New step..." data-pi="${pi}">
+      <button class="btn" data-pi="${pi}">Add</button>
+    `;
+    tasksDiv.appendChild(addRow);
+
+    phaseDiv.appendChild(tasksDiv);
+    container.appendChild(phaseDiv);
+  });
+
+  attachHandlers();
+}
+
+function attachHandlers() {
+  document.querySelectorAll(".checkbox").forEach(el => {
+    el.addEventListener("click", e => {
+      e.stopPropagation();
+      const t = e.target.closest(".task").querySelector(".task-text");
+      toggleTask(+t.dataset.pi, +t.dataset.ti);
+    });
+  });
+
+  document.querySelectorAll(".task-text").forEach(el => {
+    el.addEventListener("click", e => {
+      if (editMode) return;
+      toggleTask(+el.dataset.pi, +el.dataset.ti);
+    });
+    if (editMode) {
+      el.setAttribute("contenteditable", "true");
+      el.addEventListener("blur", () => {
+        const pi = +el.dataset.pi, ti = +el.dataset.ti;
+        const newText = el.textContent.replace(/^NEXT/, "").trim();
+        if (newText && newText !== data.phases[pi].tasks[ti].text) {
+          data.phases[pi].tasks[ti].text = newText;
+          scheduleSave();
+        }
+      });
+    }
+  });
+
+  document.querySelectorAll(".delete-x").forEach(el => {
+    el.addEventListener("click", e => {
+      e.stopPropagation();
+      const pi = +el.dataset.pi, ti = +el.dataset.ti;
+      if (confirm(`Delete: "${data.phases[pi].tasks[ti].text}"?`)) {
+        data.phases[pi].tasks.splice(ti, 1);
+        scheduleSave(); render();
+      }
+    });
+  });
+
+  document.querySelectorAll(".task-menu").forEach(el => {
+    el.addEventListener("click", e => {
+      e.stopPropagation();
+      closeMenu();
+      const pi = +el.dataset.pi, ti = +el.dataset.ti;
+      const task = data.phases[pi].tasks[ti];
+      const rect = el.getBoundingClientRect();
+      const menu = document.createElement("div");
+      menu.className = "menu-popup";
+      menu.style.top = (rect.bottom + window.scrollY + 4) + "px";
+      menu.style.left = (rect.left + window.scrollX - 130) + "px";
+      menu.innerHTML = `
+        <button data-action="toggle">${task.done ? "Mark not done" : "Mark done"}</button>
+        <button data-action="setdate">Set date...</button>
+        <button data-action="cleardate">Clear date</button>
+        <button class="danger" data-action="delete">Delete step</button>
+      `;
+      menu.querySelectorAll("button").forEach(b => {
+        b.addEventListener("click", () => {
+          const a = b.dataset.action;
+          if (a === "toggle") {
+            task.done = !task.done;
+            if (task.done && !task.date) task.date = todayStr();
+          } else if (a === "setdate") {
+            const d = prompt("Date (e.g., May 5):", task.date || "");
+            if (d !== null) task.date = d;
+          } else if (a === "cleardate") {
+            task.date = "";
+          } else if (a === "delete") {
+            if (confirm(`Delete: "${task.text}"?`)) {
+              data.phases[pi].tasks.splice(ti, 1);
+            } else return;
+          }
+          scheduleSave(); closeMenu(); render();
+        });
+      });
+      document.body.appendChild(menu);
+      openMenu = menu;
+    });
+  });
+
+  document.querySelectorAll(".add-task-row button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const pi = +btn.dataset.pi;
+      const input = document.querySelector(`.add-task-row input[data-pi="${pi}"]`);
+      const text = input.value.trim();
+      if (text) {
+        data.phases[pi].tasks.push({ text, done: false, date: "" });
+        scheduleSave(); render();
+      }
+    });
+  });
+}
+
+function toggleTask(pi, ti) {
+  const t = data.phases[pi].tasks[ti];
+  t.done = !t.done;
+  if (t.done && !t.date) t.date = todayStr();
+  scheduleSave(); render();
+}
+
+function todayStr() {
+  return new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function closeMenu() { if (openMenu) { openMenu.remove(); openMenu = null; } }
+document.addEventListener("click", closeMenu);
+
+// Drive link
+document.getElementById("driveLink").addEventListener("input", e => {
+  data.driveLink = e.target.value;
+  scheduleSave();
+});
+
+// Edit mode
+document.getElementById("editBtn").addEventListener("click", () => {
+  editMode = !editMode;
+  document.body.classList.toggle("edit-mode", editMode);
+  document.getElementById("editBtn").textContent = editMode ? "Done Editing" : "Edit Steps";
+  render();
+});
+
+// Reset
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Reset all progress? Wipes checkmarks and dates but keeps custom steps.")) {
+    data.phases.forEach(p => p.tasks.forEach(t => { t.done = false; t.date = ""; }));
+    scheduleSave(); render();
+  }
+});
+
+// Token management
+document.getElementById("tokenSave").addEventListener("click", () => {
+  const t = document.getElementById("tokenInput").value.trim();
+  if (!t) return alert("Paste a token first.");
+  setToken(t);
+  document.getElementById("tokenPrompt").style.display = "none";
+  loadState();
+});
+document.getElementById("changeTokenBtn").addEventListener("click", () => {
+  const cur = getToken();
+  const t = prompt("Update GitHub token (leave blank to clear):", cur);
+  if (t === null) return;
+  if (t.trim()) {
+    setToken(t.trim());
+    loadState();
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+    document.getElementById("tokenPrompt").style.display = "block";
+    setSync("error", "Token cleared");
+  }
+});
+
+// Boot
+loadState();
+
+// Periodic poll for remote changes (every 30s) — keeps phone & desktop loosely synced
+setInterval(async () => {
+  if (!getToken() || saving || pendingChanges) return;
+  try {
+    const remote = await ghGet();
+    if (remote && JSON.stringify(remote) !== JSON.stringify(data)) {
+      data = remote;
+      render();
+      setSync("synced", "Updated from remote");
+    }
+  } catch (e) { /* silent */ }
+}, 30000);
+</script>
+</body>
+</html>
