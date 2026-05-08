@@ -7,7 +7,7 @@
       "tasks": [
         {
           "text": "Add Gmail Folder",
-          "done": false,
+          "done": true,
           "date": "May 7"
         },
         {
@@ -17,13 +17,13 @@
         },
         {
           "text": "Run Claude Research Script on the Company",
-          "done": false,
-          "date": ""
+          "done": true,
+          "date": "May 7"
         },
         {
           "text": "Create Opening Email",
-          "done": false,
-          "date": ""
+          "done": true,
+          "date": "May 7"
         },
         {
           "text": "Create Intro Video (Loom — gauges watches)",
