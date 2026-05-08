@@ -1,0 +1,220 @@
+{
+  "driveLink": "",
+  "phases": [
+    {
+      "name": "PHASE 1 — START",
+      "collapsed": false,
+      "tasks": [
+        {
+          "text": "Add Gmail Folder",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Start Claude Project",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Run Claude Research Script on the Company",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Create Opening Email",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Create Intro Video (Loom — gauges watches)",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Send Opening Email",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Set and Host Zoom Meeting",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Upload Transcript to Claude",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Create and Send Initial Financials Steps and Process Overview Email",
+          "done": false,
+          "date": ""
+        }
+      ]
+    },
+    {
+      "name": "PHASE 2 — FINANCIAL REVIEW",
+      "collapsed": false,
+      "tasks": [
+        {
+          "text": "Received P&L from Seller",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Send P&L to QL PL Import",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Request Cashback Information from Seller",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Create Addbacks and Finalize SDE",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Create Loom Video of Financial Findings / Valuation",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Set Meeting with Seller to Review Financials and Valuation",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Request 3 Years Taxes for Corporation (Google Drive Link)",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Send Taxes to SBA Bankers",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Review Results from SBA Bankers",
+          "done": false,
+          "date": ""
+        }
+      ]
+    },
+    {
+      "name": "PHASE 3 — ENGAGEMENT & CLIENT INTERVIEW",
+      "collapsed": false,
+      "tasks": [
+        {
+          "text": "Send Engagement Agreement",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Engagement Agreement Signed",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Run Client Interview Script with Overview via Claude",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Send Client Interview in Google Docs to the Seller",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Send Completed Client Interview to the QL Editors",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Finalize Edits",
+          "done": false,
+          "date": ""
+        }
+      ]
+    },
+    {
+      "name": "PHASE 4 — LISTING BUILD",
+      "collapsed": false,
+      "tasks": [
+        {
+          "text": "Create Executive Summary and Key Benefits",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Send Executive Summary and Key Benefits to Editors",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Create Summary in Generator",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Determine Outreach for Deanna",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Set Video Interview and Final Review of Listing",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Send Client Interview to QL Summaries",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Complete Video Interview",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Populate Anonymized Version of Summary to AC",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Check Revenue, SDE, Price and All AC Info",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Populate Docs in Business Summary Folder",
+          "done": false,
+          "date": ""
+        }
+      ]
+    },
+    {
+      "name": "PHASE 5 — LAUNCH",
+      "collapsed": false,
+      "tasks": [
+        {
+          "text": "Set Email Launch",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Push Live",
+          "done": false,
+          "date": ""
+        },
+        {
+          "text": "Review Website Listing",
+          "done": false,
+          "date": ""
+        }
+      ]
+    }
+  ]
+}
