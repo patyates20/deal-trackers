@@ -12,8 +12,8 @@
         },
         {
           "text": "Start Claude Project",
-          "done": false,
-          "date": ""
+          "done": true,
+          "date": "May 7"
         },
         {
           "text": "Run Claude Research Script on the Company",
