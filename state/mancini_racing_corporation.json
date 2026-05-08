@@ -37,13 +37,13 @@
         },
         {
           "text": "Set and Host Zoom Meeting",
-          "done": false,
-          "date": ""
+          "done": true,
+          "date": "May 7"
         },
         {
           "text": "Upload Transcript to Claude",
-          "done": false,
-          "date": ""
+          "done": true,
+          "date": "May 7"
         },
         {
           "text": "Create and Send Initial Financials Steps and Process Overview Email",
