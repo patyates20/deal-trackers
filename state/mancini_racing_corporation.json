@@ -7,8 +7,8 @@
       "tasks": [
         {
           "text": "Add Gmail Folder",
-          "done": false,
-          "date": ""
+          "done": true,
+          "date": "May 7"
         },
         {
           "text": "Start Claude Project",
