@@ -7,7 +7,7 @@
       "tasks": [
         {
           "text": "Add Gmail Folder",
-          "done": true,
+          "done": false,
           "date": "May 7"
         },
         {
